@@ -7,8 +7,6 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { PackagesModule } from './packages/packages.module';
-import { UserPackagesModule } from './user-packages/user-packages.module';
-import { WhatsappModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -16,8 +14,6 @@ import { WhatsappModule } from './whatsapp/whatsapp.module';
     TypeOrmModule.forRoot(dataSourceOptions),
     AuthModule,
     PackagesModule,
-    UserPackagesModule,
-    WhatsappModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

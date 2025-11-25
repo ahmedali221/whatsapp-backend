@@ -1,0 +1,75 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ContactsService } from './contacts.service';
+import { CreateContactDto } from './dto/create-contact.dto';
+
+@Controller('contacts')
+export class ContactsController {
+  constructor(private contactsService: ContactsService) {}
+
+  // ========== Excel Upload ==========
+
+  @Post('upload-excel')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  async uploadExcel(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('groupName') groupName?: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    return this.contactsService.uploadExcel(req.user.userId, file, groupName);
+  }
+
+  // ========== CRUD Endpoints ==========
+
+  @Post()
+  async createContact(@Req() req: any, @Body() createContactDto: CreateContactDto) {
+    return this.contactsService.createContact(req.user.userId, createContactDto);
+  }
+
+  @Get()
+  async getAllContacts(@Req() req: any, @Query('groupName') groupName?: string) {
+    return this.contactsService.getAllContacts(req.user.userId, groupName);
+  }
+
+  @Get('groups')
+  async getGroups(@Req() req: any) {
+    return this.contactsService.getGroups(req.user.userId);
+  }
+
+  @Get(':id')
+  async getContactById(@Req() req: any, @Param('id') id: string) {
+    return this.contactsService.getContactById(req.user.userId, id);
+  }
+
+  @Delete(':id')
+  async deleteContact(@Req() req: any, @Param('id') id: string) {
+    return this.contactsService.deleteContact(req.user.userId, id);
+  }
+
+  @Delete()
+  async deleteAllContacts(@Req() req: any, @Query('groupName') groupName?: string) {
+    return this.contactsService.deleteAllContacts(req.user.userId, groupName);
+  }
+}
