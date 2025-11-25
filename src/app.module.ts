@@ -6,12 +6,14 @@ import { dataSourceOptions } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { PackagesModule } from './packages/packages.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(dataSourceOptions),
     AuthModule,
+    PackagesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
