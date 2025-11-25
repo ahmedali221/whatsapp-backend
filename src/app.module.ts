@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { PackagesModule } from './packages/packages.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { ContactsModule } from './contacts/contacts.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { PackagesModule } from './packages/packages.module';
     TypeOrmModule.forRoot(dataSourceOptions),
     AuthModule,
     PackagesModule,
+    DashboardModule,
+    ContactsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
