@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { WhatsappConnection } from '../../whatsapp/entities/whatsapp-connection.entity';
 
 export enum Role {
   SUPER_ADMIN = 'SUPER_ADMIN',
@@ -26,6 +27,9 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ name: 'phone_number', type: 'varchar', nullable: true })
+  phoneNumber: string | null;
+
   @Column()
   password: string;
 
@@ -40,8 +44,8 @@ export class User {
   // @JoinColumn({ name: 'current_subscription_id' })
   // currentSubscription: Subscription;
 
-  // @OneToMany(() => WhatsappConnection, (conn) => conn.user)
-  // whatsappConnections: WhatsappConnection[];
+  @OneToMany(() => WhatsappConnection, (conn) => conn.user)
+  whatsappConnections: WhatsappConnection[];
 
   // @OneToMany(() => Contact, (contact) => contact.user)
   // contacts: Contact[];
