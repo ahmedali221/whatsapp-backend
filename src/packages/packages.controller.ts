@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { CreatePackageDto } from './dto/create-package.dto';
 import { UpdatePackageDto } from './dto/update-package.dto';
@@ -6,6 +6,9 @@ import { SubscribeDto } from './dto/subscribe.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/entities/user.entity';
 import { Public } from '../auth/decorators/public.decorator';
+import { SubscriptionGuard } from './guards/subscription.guard';
+import { MessageLengthInterceptor } from './interceptors/message-length.interceptor';
+import { ValidateMessageLength } from './decorators/validate-message-length.decorator';
 
 @Controller('packages')
 export class PackagesController {
@@ -60,5 +63,26 @@ export class PackagesController {
   @Get('my-subscription/history')
   async getSubscriptionHistory(@Req() req: any) {
     return this.packagesService.getSubscriptionHistory(req.user.userId);
+  }
+
+  // ========== Test Endpoint: Validate Message Before Sending ==========
+
+  @Post('validate-message')
+  @UseGuards(SubscriptionGuard)
+  @UseInterceptors(MessageLengthInterceptor)
+  @ValidateMessageLength()
+  async validateMessage(@Req() req: any, @Body() body: { content: string }) {
+    const { subscription, messageLength } = req;
+
+    return {
+      status: 'valid',
+      message: 'Message is valid and can be sent',
+      details: {
+        messageLength,
+        charactersLimit: subscription.charactersLimit,
+        messagesRemaining: subscription.messagesRemaining,
+        messagesLimit: subscription.messagesLimit,
+      },
+    };
   }
 }
