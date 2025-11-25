@@ -18,7 +18,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { name, email, password } = registerDto;
+    const { name, email, password, phoneNumber } = registerDto;
 
     const exists = await this.userRepo.findOne({ where: { email } });
     if (exists) throw new ConflictException('Email already exists');
@@ -27,13 +27,14 @@ export class AuthService {
     const user = this.userRepo.create({
       name,
       email,
+      phoneNumber: phoneNumber || null,
       password: hashedPassword,
     });
     await this.userRepo.save(user);
 
     return {
       message: 'User registered successfully',
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, phoneNumber: user.phoneNumber },
     };
   }
 
@@ -53,6 +54,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         role: user.role,
       },
     };
@@ -61,7 +63,7 @@ export class AuthService {
   async getProfile(userId: string) {
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      select: ['id', 'name', 'email', 'role', 'currentSubscriptionId', 'createdAt'],
+      select: ['id', 'name', 'email', 'phoneNumber', 'role', 'currentSubscriptionId', 'createdAt'],
     });
 
     if (!user) throw new NotFoundException('User not found');
@@ -84,7 +86,7 @@ export class AuthService {
 
     return {
       message: 'Profile updated successfully',
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, phoneNumber: user.phoneNumber },
     };
   }
 

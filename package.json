@@ -13,7 +13,10 @@
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run typeorm -- migration:run",
-    "migration:revert": "npm run typeorm -- migration:revert"
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "seed:packages": "ts-node -r tsconfig-paths/register src/database/seeds/packages.seed.ts",
+    "seed:users": "ts-node -r tsconfig-paths/register src/database/seeds/users.seed.ts",
+    "seed:all": "npm run seed:packages && npm run seed:users"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -31,9 +34,11 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
+    "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.27"
+    "typeorm": "^0.3.27",
+    "whatsapp-web.js": "^1.34.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
