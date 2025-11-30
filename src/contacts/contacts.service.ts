@@ -23,20 +23,37 @@ export class ContactsService {
     const allowedMimeTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
       'application/vnd.ms-excel', // .xls
+      'text/csv', // .csv
+      'application/csv', // .csv (alternative)
+      'text/plain', // .csv (some systems)
     ];
 
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Invalid file type. Please upload an Excel file (.xlsx or .xls)');
+    const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
+    const isCSV = fileExtension === 'csv' || file.mimetype.includes('csv') || file.mimetype === 'text/plain';
+
+    if (!allowedMimeTypes.includes(file.mimetype) && !isCSV) {
+      throw new BadRequestException('Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file (.csv)');
     }
 
     try {
-      // قراءة الملف
-      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      
-      // تحويل الـ Excel لـ JSON
-      const data: any[] = XLSX.utils.sheet_to_json(worksheet);
+      let data: any[];
+
+      if (isCSV) {
+        // Parse CSV file using XLSX
+        const csvText = file.buffer.toString('utf-8');
+        const workbook = XLSX.read(csvText, { type: 'string' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        data = XLSX.utils.sheet_to_json(worksheet);
+      } else {
+        // قراءة الملف Excel
+        const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // تحويل الـ Excel لـ JSON
+        data = XLSX.utils.sheet_to_json(worksheet);
+      }
 
       if (data.length === 0) {
         throw new BadRequestException('Excel file is empty');
@@ -162,6 +179,36 @@ export class ContactsService {
     }
 
     return contact;
+  }
+
+  async updateContact(userId: string, id: string, updateData: { name?: string; phone?: string; email?: string; groupName?: string }) {
+    const contact = await this.getContactById(userId, id);
+
+    // If phone is being updated, check for duplicates
+    if (updateData.phone && updateData.phone !== contact.phone) {
+      const normalizedPhone = this.normalizePhone(updateData.phone);
+      const existing = await this.contactRepo.findOne({
+        where: { userId, phone: normalizedPhone },
+      });
+
+      if (existing && existing.id !== id) {
+        throw new BadRequestException('Contact with this phone number already exists');
+      }
+      updateData.phone = normalizedPhone;
+    }
+
+    // Update contact fields
+    if (updateData.name !== undefined) contact.name = updateData.name;
+    if (updateData.phone !== undefined) contact.phone = updateData.phone;
+    if (updateData.email !== undefined) contact.email = updateData.email;
+    if (updateData.groupName !== undefined) contact.groupName = updateData.groupName;
+
+    await this.contactRepo.save(contact);
+
+    return {
+      message: 'Contact updated successfully',
+      contact,
+    };
   }
 
   async deleteContact(userId: string, id: string) {

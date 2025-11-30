@@ -5,9 +5,10 @@ import { DashboardController } from './dashboard.controller';
 import { User } from '../auth/entities/user.entity';
 import { Subscription } from '../packages/entities/subscription.entity';
 import { Contact } from 'src/contacts/entities/contact.entity';
+import { Message } from '../whatsapp/entities/message.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Subscription , Contact])],
+  imports: [TypeOrmModule.forFeature([User, Subscription , Contact, Message])],
   controllers: [DashboardController],
   providers: [DashboardService],
   exports: [DashboardService],

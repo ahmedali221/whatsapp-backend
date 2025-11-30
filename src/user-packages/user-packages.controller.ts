@@ -42,6 +42,14 @@ export class UserPackagesController {
   }
 
   /**
+   * Get usage statistics
+   */
+  @Get('statistics/usage')
+  async getUsageStatistics(@Req() req: any) {
+    return this.userPackagesService.getUsageStatistics(req.user.userId);
+  }
+
+  /**
    * Get subscription by ID
    */
   @Get(':id')
@@ -67,14 +75,6 @@ export class UserPackagesController {
   @Delete(':id')
   async cancelSubscription(@Req() req: any, @Param('id') id: string) {
     return this.userPackagesService.cancelSubscription(req.user.userId, id);
-  }
-
-  /**
-   * Get usage statistics
-   */
-  @Get('statistics/usage')
-  async getUsageStatistics(@Req() req: any) {
-    return this.userPackagesService.getUsageStatistics(req.user.userId);
   }
 }
 

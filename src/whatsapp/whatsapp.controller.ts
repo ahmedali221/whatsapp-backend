@@ -67,6 +67,16 @@ export class WhatsappController {
       message: 'WhatsApp disconnected successfully',
     };
   }
+
+  @Post('send-messages')
+  async sendMessages(@Req() req: any, @Body() body: { messages: Array<{ phone: string; message: string; name?: string }> }) {
+    const userId = req.user.userId;
+    const results = await this.whatsappService.sendBulkMessages(userId, body.messages);
+    return {
+      message: 'Messages sent',
+      results,
+    };
+  }
 }
 
 

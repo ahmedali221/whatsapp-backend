@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { User } from '../auth/entities/user.entity';
 import { Subscription, SubscriptionStatus } from '../packages/entities/subscription.entity';
-import { Contact } from '../contacts/entities/contact.entity'
+import { Contact } from '../contacts/entities/contact.entity';
+import { Message, MessageStatus } from '../whatsapp/entities/message.entity';
 
 @Injectable()
 export class DashboardService {
@@ -14,6 +15,8 @@ export class DashboardService {
     private subscriptionRepo: Repository<Subscription>,
     @InjectRepository(Contact)
     private contactRepo: Repository<Contact>,
+    @InjectRepository(Message)
+    private messageRepo: Repository<Message>,
   ) {}
 
   async incrementMessagesSent(userId: string) {
@@ -128,6 +131,49 @@ export class DashboardService {
       0
     );
 
+    // Calculate average characters per message
+    // Using efficient query that works across different databases
+    let averageCharactersPerMessage = 0;
+    const sentMessagesCount = await this.messageRepo.count({
+      where: { status: MessageStatus.SENT },
+    });
+
+    if (sentMessagesCount > 0) {
+      try {
+        // Use PostgreSQL's LENGTH() function for efficient calculation
+        const result = await this.messageRepo
+          .createQueryBuilder('message')
+          .select('AVG(LENGTH(message.message))', 'avgLength')
+          .where('message.status = :status', { status: MessageStatus.SENT })
+          .getRawOne();
+        
+        if (result?.avgLength) {
+          averageCharactersPerMessage = Math.round(parseFloat(result.avgLength));
+        }
+      } catch (error) {
+        // Fallback: calculate manually using a sample if SQL fails
+        // This is more memory-efficient than loading all messages
+        const sentMessages = await this.messageRepo.find({
+          where: { status: MessageStatus.SENT },
+          select: ['message'],
+          take: Math.min(10000, sentMessagesCount), // Sample up to 10k messages
+        });
+
+        if (sentMessages.length > 0) {
+          const totalCharacters = sentMessages.reduce(
+            (sum, msg) => sum + (msg.message?.length || 0),
+            0
+          );
+          averageCharactersPerMessage = Math.round(totalCharacters / sentMessages.length);
+        }
+      }
+    }
+
+    // Count failed messages
+    const failedMessages = await this.messageRepo.count({
+      where: { status: MessageStatus.FAILED },
+    });
+
     const totalRevenue = allSubscriptions
       .filter(sub => sub.paymentStatus === 'PAID')
       .reduce((sum, sub) => {
@@ -141,6 +187,8 @@ export class DashboardService {
         activeSubscriptions,
         expiredSubscriptions,
         totalMessagesSent,
+        failedMessages,
+        averageCharactersPerMessage,
         totalRevenue, // TODO: سيتم حسابه بشكل صحيح لاحقًا
       },
       recentSubscriptions: await this.getRecentSubscriptions(),

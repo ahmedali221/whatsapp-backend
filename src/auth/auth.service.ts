@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like, ILike } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
@@ -8,12 +8,15 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { Subscription, SubscriptionStatus } from '../packages/entities/subscription.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
+    @InjectRepository(Subscription)
+    private subscriptionRepo: Repository<Subscription>,
     private jwtService: JwtService,
   ) {}
 
@@ -41,7 +44,10 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    const user = await this.userRepo.findOne({ where: { email } });
+    const user = await this.userRepo.findOne({ 
+      where: { email },
+      relations: ['permissions'],
+    });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -56,6 +62,7 @@ export class AuthService {
         email: user.email,
         phoneNumber: user.phoneNumber,
         role: user.role,
+        permissions: user.permissions?.map((p) => p.name) || [],
       },
     };
   }
@@ -63,11 +70,16 @@ export class AuthService {
   async getProfile(userId: string) {
     const user = await this.userRepo.findOne({
       where: { id: userId },
+      relations: ['permissions'],
       select: ['id', 'name', 'email', 'phoneNumber', 'role', 'currentSubscriptionId', 'createdAt'],
     });
 
     if (!user) throw new NotFoundException('User not found');
-    return user;
+    
+    return {
+      ...user,
+      permissions: user.permissions?.map((p) => p.name) || [],
+    };
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
@@ -103,5 +115,99 @@ export class AuthService {
     await this.userRepo.save(user);
 
     return { message: 'Password changed successfully' };
+  }
+
+  async getAllUsers(page: number = 1, limit: number = 10, search?: string) {
+    const skip = (page - 1) * limit;
+
+    const whereConditions: any[] = [];
+    if (search) {
+      whereConditions.push(
+        { name: ILike(`%${search}%`) },
+        { email: ILike(`%${search}%`) },
+      );
+    }
+
+    const [users, total] = await this.userRepo.findAndCount({
+      where: whereConditions.length > 0 ? whereConditions : undefined,
+      select: ['id', 'name', 'email', 'phoneNumber', 'role', 'currentSubscriptionId', 'createdAt', 'updatedAt'],
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+
+    // Get subscription info for each user
+    const usersWithSubscription = await Promise.all(
+      users.map(async (user) => {
+        const subscription = await this.subscriptionRepo.findOne({
+          where: { userId: user.id, status: SubscriptionStatus.ACTIVE },
+          relations: ['package'],
+        });
+        return {
+          ...user,
+          subscription: subscription ? {
+            id: subscription.id,
+            packageName: subscription.package?.name || 'No plan',
+            status: subscription.status,
+          } : null,
+        };
+      })
+    );
+
+    return {
+      users: usersWithSubscription,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getUserById(userId: string) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['id', 'name', 'email', 'phoneNumber', 'role', 'currentSubscriptionId', 'createdAt', 'updatedAt'],
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const subscription = await this.subscriptionRepo.findOne({
+      where: { userId: user.id, status: SubscriptionStatus.ACTIVE },
+      relations: ['package'],
+    });
+
+    return {
+      ...user,
+      subscription: subscription ? {
+        id: subscription.id,
+        packageName: subscription.package?.name || 'No plan',
+        status: subscription.status,
+        messagesLimit: subscription.messagesLimit,
+        messagesUsed: subscription.messagesUsed,
+        messagesRemaining: subscription.messagesRemaining,
+      } : null,
+    };
+  }
+
+  async updateUserByAdmin(userId: string, updateData: { name?: string; email?: string; role?: string }) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (updateData.email && updateData.email !== user.email) {
+      const emailExists = await this.userRepo.findOne({
+        where: { email: updateData.email },
+      });
+      if (emailExists) throw new ConflictException('Email already in use');
+    }
+
+    Object.assign(user, updateData);
+    await this.userRepo.save(user);
+
+    return {
+      message: 'User updated successfully',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    };
   }
 }

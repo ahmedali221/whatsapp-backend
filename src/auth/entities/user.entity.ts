@@ -7,8 +7,11 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { WhatsappConnection } from '../../whatsapp/entities/whatsapp-connection.entity';
+import { Permission } from './permission.entity';
 
 export enum Role {
   SUPER_ADMIN = 'SUPER_ADMIN',
@@ -46,6 +49,14 @@ export class User {
 
   @OneToMany(() => WhatsappConnection, (conn) => conn.user)
   whatsappConnections: WhatsappConnection[];
+
+  @ManyToMany(() => Permission, (permission) => permission.users)
+  @JoinTable({
+    name: 'user_permissions',
+    joinColumn: { name: 'user_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'permission_id', referencedColumnName: 'id' },
+  })
+  permissions: Permission[];
 
   // @OneToMany(() => Contact, (contact) => contact.user)
   // contacts: Contact[];

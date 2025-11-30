@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Body,
   Param,
@@ -14,6 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ContactsService } from './contacts.service';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { UpdateContactDto } from './dto/update-contact.dto';
 
 @Controller('contacts')
 export class ContactsController {
@@ -61,6 +63,11 @@ export class ContactsController {
   @Get(':id')
   async getContactById(@Req() req: any, @Param('id') id: string) {
     return this.contactsService.getContactById(req.user.userId, id);
+  }
+
+  @Put(':id')
+  async updateContact(@Req() req: any, @Param('id') id: string, @Body() updateContactDto: UpdateContactDto) {
+    return this.contactsService.updateContact(req.user.userId, id, updateContactDto);
   }
 
   @Delete(':id')

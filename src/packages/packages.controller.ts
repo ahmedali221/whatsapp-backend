@@ -4,13 +4,17 @@ import { CreatePackageDto } from './dto/create-package.dto';
 import { UpdatePackageDto } from './dto/update-package.dto';
 import { SubscribeDto } from './dto/subscribe.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Permissions } from '../auth/decorators/permissions.decorator';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Role } from '../auth/entities/user.entity';
+import { PermissionName } from '../auth/entities/permission.entity';
 import { Public } from '../auth/decorators/public.decorator';
 import { SubscriptionGuard } from './guards/subscription.guard';
 import { MessageLengthInterceptor } from './interceptors/message-length.interceptor';
 import { ValidateMessageLength } from './decorators/validate-message-length.decorator';
 
 @Controller('packages')
+@UseGuards(PermissionsGuard)
 export class PackagesController {
   constructor(private packagesService: PackagesService) {}
 
@@ -31,18 +35,21 @@ export class PackagesController {
   // ========== Admin Only Endpoints ==========
 
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Permissions(PermissionName.CREATE_PLANS)
   @Post()
   async createPackage(@Body() createPackageDto: CreatePackageDto) {
     return this.packagesService.createPackage(createPackageDto);
   }
 
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Permissions(PermissionName.EDIT_PLANS)
   @Patch(':id')
   async updatePackage(@Param('id') id: string, @Body() updatePackageDto: UpdatePackageDto) {
     return this.packagesService.updatePackage(id, updatePackageDto);
   }
 
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Permissions(PermissionName.DELETE_PLANS)
   @Delete(':id')
   async deletePackage(@Param('id') id: string) {
     return this.packagesService.deletePackage(id);

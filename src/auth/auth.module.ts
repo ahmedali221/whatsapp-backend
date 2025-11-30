@@ -7,10 +7,13 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { User } from './entities/user.entity';
+import { Permission } from './entities/permission.entity';
+import { Subscription } from '../packages/entities/subscription.entity';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Permission, Subscription]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -20,6 +23,7 @@ import { User } from './entities/user.entity';
         signOptions: { expiresIn: config.get('JWT_EXPIRATION') || '7d' },
       }),
     }),
+    PermissionsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
