@@ -19,10 +19,10 @@ services:
   backend:
     environment:
       NODE_ENV: production
-      PORT: ${PORT:-3000}
+      PORT: ${PORT:-3050}
     # Remove port mapping if using reverse proxy
     # ports:
-    #   - '${PORT:-3000}:${PORT:-3000}'
+    #   - '${PORT:-3050}:3050'
     restart: unless-stopped
     deploy:
       resources:

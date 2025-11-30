@@ -77,7 +77,7 @@ Add the following configuration (adjust values as needed):
 ```env
 # Application Configuration
 NODE_ENV=production
-PORT=3000
+PORT=3050
 
 # Database Configuration
 DB_HOST=postgres
@@ -111,13 +111,13 @@ Allow necessary ports through the firewall:
 ```bash
 # If using UFW
 sudo ufw allow 22/tcp    # SSH
-sudo ufw allow 3000/tcp  # Backend API (or your chosen port)
+sudo ufw allow 3050/tcp  # Backend API (or your chosen port)
 sudo ufw allow 80/tcp    # HTTP (if using reverse proxy)
 sudo ufw allow 443/tcp   # HTTPS (if using reverse proxy)
 sudo ufw enable
 
 # If using firewalld
-sudo firewall-cmd --permanent --add-port=3000/tcp
+sudo firewall-cmd --permanent --add-port=3050/tcp
 sudo firewall-cmd --permanent --add-port=80/tcp
 sudo firewall-cmd --permanent --add-port=443/tcp
 sudo firewall-cmd --reload
@@ -181,7 +181,7 @@ server {
     server_name your-domain.com;  # Replace with your domain
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3050;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -278,7 +278,7 @@ Verify your deployment:
 
 ```bash
 # Check if backend is responding
-curl http://localhost:3000
+curl http://localhost:3050
 
 # Check container health
 docker-compose ps
@@ -296,7 +296,7 @@ docker stats
 docker-compose logs backend
 
 # Check if port is already in use
-sudo netstat -tulpn | grep 3000
+sudo netstat -tulpn | grep 3050
 
 # Restart Docker
 sudo systemctl restart docker
@@ -339,7 +339,7 @@ chmod -R 755 /var/www/wa-project
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `NODE_ENV` | Environment mode | `production` | Yes |
-| `PORT` | Server port | `3000` | No |
+| `PORT` | Server port | `3050` | No |
 | `DB_HOST` | Database host | `postgres` | Yes |
 | `DB_PORT` | Database port | `5432` | Yes |
 | `DB_USERNAME` | Database username | `postgres` | Yes |

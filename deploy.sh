@@ -67,7 +67,7 @@ docker-compose exec -T backend npm run migration:run || {
 echo "🏥 Performing health check..."
 sleep 5
 
-PORT=$(grep PORT .env | cut -d '=' -f2 | tr -d ' ' || echo "3000")
+PORT=$(grep PORT .env | cut -d '=' -f2 | tr -d ' ' || echo "3050")
 if curl -f http://localhost:${PORT} > /dev/null 2>&1; then
     echo -e "${GREEN}✓ Backend is responding on port ${PORT}${NC}"
 else

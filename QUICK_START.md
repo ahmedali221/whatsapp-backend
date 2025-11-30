@@ -67,27 +67,27 @@ docker-compose ps
 docker-compose logs -f backend
 
 # Test API
-curl http://localhost:3000
+curl http://localhost:3050
 ```
 
 ## Port Configuration
 
-The server uses the `PORT` environment variable (default: 3000).
+The server uses the `PORT` environment variable (default: 3050).
 
-- **Internal container port:** Always 3000
-- **External host port:** Set via `EXTERNAL_PORT` in `.env` (default: 3000)
+- **Internal container port:** Always 3050
+- **External host port:** Set via `EXTERNAL_PORT` in `.env` (default: 3050)
 
 To use a different external port (e.g., 8080):
 
 ```env
-PORT=3000
+PORT=3050
 EXTERNAL_PORT=8080
 ```
 
 Then update docker-compose.yml port mapping:
 ```yaml
 ports:
-  - '8080:3000'
+  - '8080:3050'
 ```
 
 ## Common Commands
@@ -113,7 +113,7 @@ docker-compose exec backend npm run migration:run
 **Port already in use:**
 ```bash
 # Find what's using the port
-sudo netstat -tulpn | grep 3000
+sudo netstat -tulpn | grep 3050
 # Or change PORT in .env
 ```
 
