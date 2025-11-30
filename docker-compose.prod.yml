@@ -1,0 +1,39 @@
+# Production override for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # Remove port mapping in production if database should only be accessible internally
+    # ports:
+    #   - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: Add backup volume
+      - ./backups:/backups
+
+  backend:
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+    # Remove port mapping if using reverse proxy
+    # ports:
+    #   - '${PORT:-3000}:${PORT:-3000}'
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  postgres_data:
+    driver: local
+

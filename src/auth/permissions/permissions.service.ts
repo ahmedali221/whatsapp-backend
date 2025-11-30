@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission, PermissionName } from '../entities/permission.entity';
-import { User } from '../entities/user.entity';
+import { User, Role } from '../entities/user.entity';
 
 @Injectable()
 export class PermissionsService {
@@ -62,7 +62,7 @@ export class PermissionsService {
 
   async getUsersWithPermissions() {
     return this.userRepo.find({
-      where: { role: 'ADMIN' },
+      where: { role: Role.ADMIN },
       relations: ['permissions'],
       select: ['id', 'name', 'email', 'role', 'createdAt'],
     });

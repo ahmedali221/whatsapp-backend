@@ -44,9 +44,16 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT || 3000;
-  const server = await app.listen(port);
-  const address = server.address();
-  console.log(`🚀 Server is running on http://localhost:${port}`);
+  // Get port from environment variable or use default
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+  
+  // Validate port number
+  if (isNaN(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid PORT environment variable: ${process.env.PORT}`);
+  }
+
+  await app.listen(port, '0.0.0.0'); // Listen on all interfaces for Docker
+  console.log(`🚀 Server is running on http://0.0.0.0:${port}`);
+  console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 bootstrap();
