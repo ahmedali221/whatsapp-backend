@@ -26,29 +26,19 @@ cd /var/www/wa-project/backend
 ### 3. Create Environment File
 
 ```bash
+# Copy the example file
+cp env.example .env
+
+# Edit the .env file
 nano .env
 ```
 
-Paste and customize:
+**Important:** Update these required values in `.env`:
+- `DB_PASSWORD` - Set a strong database password
+- `JWT_SECRET` - Generate a random 32+ character string (see ENV_SETUP.md for commands)
+- `FRONTEND_URL` - Your frontend domain URL
 
-```env
-NODE_ENV=production
-PORT=3000
-EXTERNAL_PORT=3000
-
-DB_HOST=postgres
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=CHANGE_THIS_PASSWORD
-DB_NAME=wa_project_db
-
-JWT_SECRET=CHANGE_THIS_TO_RANDOM_32_CHAR_STRING
-JWT_EXPIRES_IN=7d
-
-FRONTEND_URL=https://your-frontend-domain.com
-```
-
-**Important:** Change `DB_PASSWORD` and `JWT_SECRET` to secure values!
+For detailed environment variable setup, see [ENV_SETUP.md](./ENV_SETUP.md)
 
 ### 4. Deploy
 
