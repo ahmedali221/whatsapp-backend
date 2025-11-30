@@ -1,5 +1,7 @@
 import { DataSource } from 'typeorm';
 import { User, Role } from '../../auth/entities/user.entity';
+import { Permission } from '../../auth/entities/permission.entity';
+import { WhatsappConnection } from '../../whatsapp/entities/whatsapp-connection.entity';
 import { config } from 'dotenv';
 import * as bcrypt from 'bcrypt';
 
@@ -13,7 +15,7 @@ async function bootstrap() {
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    entities: [User],
+    entities: [User, Permission, WhatsappConnection],
     synchronize: false,
     logging: false,
   });
