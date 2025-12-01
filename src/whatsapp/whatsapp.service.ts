@@ -71,16 +71,62 @@ export class WhatsappService {
       }
 
       // Create auth folder for this user
-      const authFolder = path.join(process.cwd(), '.wwebjs_auth', userId);
+      // Use environment variable or default to app directory (works with Docker volume)
+      let authBaseDir = process.env.WHATSAPP_AUTH_DIR || path.join(process.cwd(), '.wwebjs_auth');
+      let authFolder = path.join(authBaseDir, userId);
+      
+      // Function to try creating directory with fallback
+      const ensureAuthDirectory = (baseDir: string, userId: string): string => {
+        const userFolder = path.join(baseDir, userId);
+        
+        // Ensure base directory exists
+        if (!fs.existsSync(baseDir)) {
+          try {
+            fs.mkdirSync(baseDir, { recursive: true, mode: 0o755 });
+          } catch (error: any) {
+            if (error.code === 'EACCES') {
+              throw error; // Re-throw to trigger fallback
+            }
+            throw new Error(`Failed to create auth base directory ${baseDir}: ${error.message}`);
+          }
+        }
+        
+        // Create user-specific auth folder
+        if (!fs.existsSync(userFolder)) {
+          try {
+            fs.mkdirSync(userFolder, { recursive: true, mode: 0o755 });
+          } catch (error: any) {
+            if (error.code === 'EACCES') {
+              throw error; // Re-throw to trigger fallback
+            }
+            throw new Error(`Failed to create auth folder for user: ${error.message}`);
+          }
+        }
+        
+        return userFolder;
+      };
+      
+      // Try to create directory, fallback to /tmp if permission denied
+      try {
+        authFolder = ensureAuthDirectory(authBaseDir, userId);
+      } catch (error: any) {
+        if (error.code === 'EACCES' && authBaseDir !== '/tmp/.wwebjs_auth') {
+          console.warn(`Permission denied for ${authBaseDir}, falling back to /tmp/.wwebjs_auth`);
+          authBaseDir = '/tmp/.wwebjs_auth';
+          authFolder = ensureAuthDirectory(authBaseDir, userId);
+        } else {
+          throw error;
+        }
+      }
       
       // CLEAR CORRUPTED AUTH STATE ON FRESH START (not reconnect)
       if (!isReconnect && fs.existsSync(authFolder)) {
         console.log(`Clearing old auth state for user ${userId}`);
-        fs.rmSync(authFolder, { recursive: true, force: true });
-      }
-      
-      if (!fs.existsSync(authFolder)) {
-        fs.mkdirSync(authFolder, { recursive: true });
+        try {
+          fs.rmSync(authFolder, { recursive: true, force: true });
+        } catch (error: any) {
+          console.warn(`Could not clear old auth state for user ${userId}:`, error.message);
+        }
       }
 
       const { state, saveCreds } = await useMultiFileAuthState(authFolder);
@@ -292,9 +338,14 @@ export class WhatsappService {
     this.reconnectAttempts.delete(userId);
 
     // Delete auth folder
-    const authFolder = path.join(process.cwd(), '.wwebjs_auth', userId);
+    const authBaseDir = process.env.WHATSAPP_AUTH_DIR || path.join(process.cwd(), '.wwebjs_auth');
+    const authFolder = path.join(authBaseDir, userId);
     if (fs.existsSync(authFolder)) {
-      fs.rmSync(authFolder, { recursive: true, force: true });
+      try {
+        fs.rmSync(authFolder, { recursive: true, force: true });
+      } catch (error: any) {
+        console.warn(`Could not delete auth folder for user ${userId}:`, error.message);
+      }
     }
 
     // Update database

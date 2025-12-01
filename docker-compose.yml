@@ -46,7 +46,7 @@ services:
       - wa-network
     volumes:
       - ./uploads:/app/uploads
-      - ./.wwebjs_auth:/app/.wwebjs_auth
+      - whatsapp_auth:/app/.wwebjs_auth
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:' + (process.env.PORT || 3050) + '/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
@@ -60,3 +60,4 @@ networks:
 
 volumes:
   postgres_data:
+  whatsapp_auth:
