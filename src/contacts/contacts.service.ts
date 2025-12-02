@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as XLSX from 'xlsx';
 import { Contact } from './entities/contact.entity';
 import { CreateContactDto } from './dto/create-contact.dto';
 
@@ -12,67 +11,27 @@ export class ContactsService {
     private contactRepo: Repository<Contact>,
   ) {}
 
-  // ========== Excel Upload ==========
+  // ========== Upload Contacts (JSON) ==========
 
-  async uploadExcel(userId: string, file: Express.Multer.File, groupName?: string) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    // التحقق من نوع الملف
-    const allowedMimeTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-excel', // .xls
-      'text/csv', // .csv
-      'application/csv', // .csv (alternative)
-      'text/plain', // .csv (some systems)
-    ];
-
-    const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
-    const isCSV = fileExtension === 'csv' || file.mimetype.includes('csv') || file.mimetype === 'text/plain';
-
-    if (!allowedMimeTypes.includes(file.mimetype) && !isCSV) {
-      throw new BadRequestException('Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file (.csv)');
+  async uploadContacts(userId: string, contactsData: Array<{ name: string; phone: string; email?: string }>, groupName?: string) {
+    if (!contactsData || !Array.isArray(contactsData) || contactsData.length === 0) {
+      throw new BadRequestException('No contacts provided');
     }
 
     try {
-      let data: any[];
-
-      if (isCSV) {
-        // Parse CSV file using XLSX
-        const csvText = file.buffer.toString('utf-8');
-        const workbook = XLSX.read(csvText, { type: 'string' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        data = XLSX.utils.sheet_to_json(worksheet);
-      } else {
-        // قراءة الملف Excel
-        const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        
-        // تحويل الـ Excel لـ JSON
-        data = XLSX.utils.sheet_to_json(worksheet);
-      }
-
-      if (data.length === 0) {
-        throw new BadRequestException('Excel file is empty');
-      }
-
       // معالجة البيانات وحفظها
       const contacts: Contact[] = [];
       const errors: string[] = [];
       const duplicates: string[] = [];
+      let skipped: number = 0;
 
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
+      for (let i = 0; i < contactsData.length; i++) {
+        const contactData = contactsData[i];
         
-        // استخراج البيانات (دعم أسماء أعمدة مختلفة)
-        const name = row.name || row.Name || row.NAME || row['الاسم'] || `Contact ${i + 1}`;
-        const phone = this.normalizePhone(
-          row.phone || row.Phone || row.PHONE || row['رقم الهاتف'] || row['الرقم']
-        );
-        const email = row.email || row.Email || row.EMAIL || row['البريد'] || null;
+        // استخراج البيانات
+        const name = contactData.name?.trim() || `Contact ${i + 1}`;
+        const phone = this.normalizePhone(contactData.phone);
+        const email = contactData.email?.trim() || undefined;
 
         // التحقق من صحة رقم الهاتف
         if (!phone || phone.length < 10) {
@@ -87,6 +46,7 @@ export class ContactsService {
 
         if (existingContact) {
           duplicates.push(`${name} (${phone})`);
+          skipped++;
           continue;
         }
 
@@ -108,18 +68,19 @@ export class ContactsService {
       }
 
       return {
-        message: 'Excel file processed successfully',
+        message: 'Contacts uploaded successfully',
         statistics: {
-          totalRows: data.length,
+          totalRows: contactsData.length,
           imported: contacts.length,
           duplicates: duplicates.length,
+          skipped: skipped,
           errors: errors.length,
         },
         duplicatesList: duplicates.length > 0 ? duplicates : undefined,
         errorsList: errors.length > 0 ? errors : undefined,
       };
     } catch (error) {
-      throw new BadRequestException(`Failed to process Excel file: ${error.message}`);
+      throw new BadRequestException(`Failed to process contacts: ${error.message}`);
     }
   }
 

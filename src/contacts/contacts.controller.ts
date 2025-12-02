@@ -8,39 +8,24 @@ import {
   Param,
   Query,
   Req,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ContactsService } from './contacts.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
+import { UploadContactsDto } from './dto/upload-contacts.dto';
 
 @Controller('contacts')
 export class ContactsController {
   constructor(private contactsService: ContactsService) {}
 
-  // ========== Excel Upload ==========
+  // ========== Upload Contacts (JSON) ==========
 
-  @Post('upload-excel')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
-      },
-    }),
-  )
-  async uploadExcel(
+  @Post('upload-contacts')
+  async uploadContacts(
     @Req() req: any,
-    @UploadedFile() file: Express.Multer.File,
-    @Body('groupName') groupName?: string,
+    @Body() uploadContactsDto: UploadContactsDto,
   ) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    return this.contactsService.uploadExcel(req.user.userId, file, groupName);
+    return this.contactsService.uploadContacts(req.user.userId, uploadContactsDto.contacts, uploadContactsDto.groupName);
   }
 
   // ========== CRUD Endpoints ==========
