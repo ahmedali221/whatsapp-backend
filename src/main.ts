@@ -14,9 +14,17 @@ async function bootstrap() {
     console.error('❌ Error seeding permissions:', error.message);
   }
 
-  // Enable CORS - Allow all origins
+  // Enable CORS - Allow all origins with credentials support
   app.enableCors({
-    origin: true, // Allow all origins
+    origin: (origin, callback) => {
+      // Allow all origins - return the origin if provided, or allow requests with no origin (e.g., mobile apps, Postman)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      // Return the specific origin to allow credentials
+      callback(null, origin);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
