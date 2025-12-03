@@ -11,7 +11,7 @@ class ContactItemDto {
   phone: string;
 
   @IsOptional()
-  @IsEmail()
+  @IsString()
   email?: string;
 }
 

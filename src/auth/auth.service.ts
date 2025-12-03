@@ -3,11 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, ILike } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from './entities/user.entity';
+import { User, Role } from './entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { Subscription, SubscriptionStatus } from '../packages/entities/subscription.entity';
 
 @Injectable()
@@ -53,6 +54,15 @@ export class AuthService {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new UnauthorizedException('Invalid credentials');
 
+    const userPermissions = user.permissions?.map((p) => p.name) || [];
+    
+    // Log admin permissions
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      console.log(`\n🔐 Admin Login: ${user.email} (${user.role})`);
+      console.log(`📋 Permissions: ${userPermissions.length > 0 ? userPermissions.join(', ') : 'No permissions assigned'}`);
+      console.log(`👤 User ID: ${user.id}\n`);
+    }
+
     const payload = { sub: user.id, email: user.email, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
@@ -62,7 +72,7 @@ export class AuthService {
         email: user.email,
         phoneNumber: user.phoneNumber,
         role: user.role,
-        permissions: user.permissions?.map((p) => p.name) || [],
+        permissions: userPermissions,
       },
     };
   }
@@ -188,6 +198,34 @@ export class AuthService {
         messagesUsed: subscription.messagesUsed,
         messagesRemaining: subscription.messagesRemaining,
       } : null,
+    };
+  }
+
+  async createUserByAdmin(createUserDto: CreateUserDto) {
+    const { name, email, password, phoneNumber, role } = createUserDto;
+
+    const exists = await this.userRepo.findOne({ where: { email } });
+    if (exists) throw new ConflictException('Email already exists');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = this.userRepo.create({
+      name,
+      email,
+      phoneNumber: phoneNumber || null,
+      password: hashedPassword,
+      role: role || Role.USER,
+    });
+    await this.userRepo.save(user);
+
+    return {
+      message: 'User created successfully',
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+      },
     };
   }
 

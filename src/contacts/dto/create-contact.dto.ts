@@ -13,7 +13,7 @@ export class CreateContactDto {
   phone: string;
 
   @IsOptional()
-  @IsEmail()
+  @IsString()
   email?: string;
 
   @IsOptional()

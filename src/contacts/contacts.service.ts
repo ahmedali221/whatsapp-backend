@@ -216,6 +216,14 @@ export class ContactsService {
     return this.contactRepo.count({ where: { userId } });
   }
 
+  async getUploadStatus(userId: string) {
+    const contactsCount = await this.contactRepo.count({ where: { userId } });
+    return {
+      hasUploaded: contactsCount > 0,
+      contactsCount: contactsCount,
+    };
+  }
+
   // ========== Helper Methods ==========
 
   private normalizePhone(phone: string): string {

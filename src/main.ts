@@ -1,9 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { PermissionsService } from './auth/permissions/permissions.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Seed permissions on startup
+  try {
+    const permissionsService = app.get(PermissionsService);
+    await permissionsService.seedPermissions();
+  } catch (error) {
+    console.error('❌ Error seeding permissions:', error.message);
+  }
 
   // Enable CORS - Allow all origins
   app.enableCors({

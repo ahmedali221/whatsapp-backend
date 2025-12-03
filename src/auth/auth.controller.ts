@@ -10,6 +10,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -56,6 +57,14 @@ export class AuthController {
       parseInt(limit, 10),
       search,
     );
+  }
+
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @UseGuards(PermissionsGuard)
+  @Permissions(PermissionName.CREATE_USERS)
+  @Post('users')
+  async createUser(@Body() createUserDto: CreateUserDto) {
+    return this.authService.createUserByAdmin(createUserDto);
   }
 
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)

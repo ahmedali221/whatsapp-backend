@@ -29,7 +29,7 @@ export class Package {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number;
 
-  @Column({ default: 'EGP' })
+  @Column({ default: 'USD' })
   currency: string;
 
   @Column({ name: 'is_active', default: true })

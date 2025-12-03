@@ -20,6 +20,11 @@ export class ContactsController {
 
   // ========== Upload Contacts (JSON) ==========
 
+  @Get('upload-status')
+  async getUploadStatus(@Req() req: any) {
+    return this.contactsService.getUploadStatus(req.user.userId);
+  }
+
   @Post('upload-contacts')
   async uploadContacts(
     @Req() req: any,
