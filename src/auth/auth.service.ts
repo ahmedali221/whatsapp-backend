@@ -229,7 +229,7 @@ export class AuthService {
     };
   }
 
-  async updateUserByAdmin(userId: string, updateData: { name?: string; email?: string; role?: string }) {
+  async updateUserByAdmin(userId: string, updateData: { name?: string; email?: string; role?: string; password?: string }) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
@@ -238,6 +238,11 @@ export class AuthService {
         where: { email: updateData.email },
       });
       if (emailExists) throw new ConflictException('Email already in use');
+    }
+
+    // Hash password if provided
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
     }
 
     Object.assign(user, updateData);

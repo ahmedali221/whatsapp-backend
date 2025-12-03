@@ -81,7 +81,7 @@ export class AuthController {
   @Patch('users/:id')
   async updateUser(
     @Param('id') id: string,
-    @Body() updateData: { name?: string; email?: string; role?: string },
+    @Body() updateData: { name?: string; email?: string; role?: string; password?: string },
   ) {
     return this.authService.updateUserByAdmin(id, updateData);
   }
