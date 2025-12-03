@@ -211,7 +211,7 @@ export class AuthService {
     const user = this.userRepo.create({
       name,
       email,
-      phoneNumber: phoneNumber || null,
+      phoneNumber: phoneNumber && phoneNumber.trim() ? phoneNumber.trim() : null,
       password: hashedPassword,
       role: role || Role.USER,
     });
