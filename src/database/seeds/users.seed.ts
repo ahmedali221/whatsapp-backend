@@ -7,10 +7,19 @@ import * as path from 'path';
 config();
 
 // Create DataSource with proper entity paths for ts-node
+// When running on host (not in Docker), use localhost and external port
+// When running in Docker, use 'postgres' as host
+const dbHost = process.env.DB_HOST === 'postgres' && !process.env.RUNNING_IN_DOCKER 
+  ? 'localhost' 
+  : (process.env.DB_HOST || 'localhost');
+const dbPort = process.env.DB_HOST === 'postgres' && !process.env.RUNNING_IN_DOCKER
+  ? Number(process.env.DB_EXTERNAL_PORT) || 5434
+  : Number(process.env.DB_PORT) || 5432;
+
 const seedDataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 5432,
+  host: dbHost,
+  port: dbPort,
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'wa_project_db',
